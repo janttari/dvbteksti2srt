@@ -4,12 +4,10 @@ http://www.huoltovalikko.com/threads/hd-tallenteiden-jatkojalostus-linuxilla-ete
 
 asennus:
 
-**git clone https://github.com/janttari/dvbteksti2srt.git**
-
-**sudo ./asennaohjelmat**
+    git clone https://github.com/janttari/dvbteksti2srt.git
+    sudo ./asennaohjelmat
 
 päivitys (projektihakemistossa):
 
-**git pull**
-
-**sudo ./update**
+    git pull
+    sudo ./update
