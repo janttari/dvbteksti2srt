@@ -1,0 +1,77 @@
+#!/bin/bash
+# 2019-10-02 Jani Janttari <janttari@yandex.ru>
+# Purkaa transport streamista ensin tekstityksen kuviksi, sitten käsittelee kuvatparemmin ocr tunnistettaviksi,
+# tunnistaa kuvista tekstin tekstitiedostoiksi ja lopulta kutsuu python-skriptiä joka luo srt-tiedoston
+#
+temppiHakemisto="/tmp/dvbteksti2srt"
+projektiNimi="dvbteksti2srt"
+omaSijainti=$PWD
+usage(){
+    echo "Käyttö:"
+    echo "$0 filename"
+    echo "$0 -lang=swe filename"
+    exit 1
+}
+if [[ $1 == -lang* ]] ; then #jos ekana argumenttina on määritelty haluttu kieli
+    kieli=$(echo $1|cut -f 2 -d "=") # eka argumentti esim -lang=swe -->swe
+    vtiedosto=$2 #koska ekana argumenttina on kieli, tiedoston nimi on toisena
+else
+    kieli=fin #Asetetaan kieleksi oletuksena suomi
+    vtiedosto=$1 #argumenttina on pelkkä tiedoston nimi
+fi
+
+if [[ $kieli == fin || $kieli == swe || $kieli == nor ]];then  #jos dvb-tekstitys joku näistä
+    tessekieli="-l $kieli" #välitetään tesseractille kieli esim "-l swe"
+fi
+
+is_file_exits(){
+    local f="$vtiedosto"
+    [[ -f "$f" ]] && return 0 || return 1
+}
+[[ $# -eq 0 ]] && usage
+
+if !( is_file_exits "$vtiedosto" )
+then
+ echo "Tiedostoa ei ole, seis!"
+ exit
+fi
+rm -rf $temppiHakemisto
+mkdir -p $temppiHakemisto
+touch $temppiHakemisto/loki.txt 2>/dev/null
+if [[ $? != "0" ]];then
+    echo "Tarkista $temppiHakemisto käyttöoikeus. Seis."
+    exit
+fi
+
+
+lcall=$LC_ALL #otetaan talteen jos onkin määritelty niin voidaan palauttaa samaksi
+export LC_ALL=C #ccextractorin koodissa bugin, vaatii tän
+ccextractor -dvblang $kieli -out=spupng -o $temppiHakemisto/$projektiNimi.xml -noteletext "$vtiedosto" >>$temppiHakemisto/loki.txt
+
+# *******************************  KÄSITELLÄÄN KUVIA NIIN ETTÄ OCR ONNISTUU PAREMMIN *****************
+mkdir -p $temppiHakemisto/muokatutKuvat
+rm -rf $temppiHakemisto/muokatutKuvat/* #*/ koska muuten enscript luulee skriptin loppua kommentiksi :)
+cd $temppiHakemisto/$projektiNimi.d/
+
+echo "Käsitellään:"
+for kuva in *.png
+do
+    numero=$(echo $kuva|cut -c 4-7)
+    echo -ne "$kuva\033[0K\r"
+    convert $kuva -set colorspace Gray -separate -average  -alpha off -negate $temppiHakemisto/muokatutKuvat/$numero.png >>$temppiHakemisto/loki.txt
+    tesseract $tessekieli  $temppiHakemisto/muokatutKuvat/$numero.png $temppiHakemisto/muokatutKuvat/$numero >>$temppiHakemisto/loki.txt 2>/$temppiHakemisto/tessaerr.txt #OCR yksittäisestä kuvasta yksittäiseksi txt-tiedostoksi
+    cat $temppiHakemisto/muokatutKuvat/$numero.txt >> $temppiHakemisto/muokatutKuvat/_teksti.txt #debuggia
+done
+echo ""
+
+cd $omaSijainti #palataan sinne mistä skripti käynnistettiin
+export LC_ALL=$lcall #palautetaan tämä siksi mikä se olikin eli luultavimmin tyhjä TÄRKEÄ PALAUTTAA ENNEN PYTHONIA!
+echo "Luodaan SRT-tiedosto"
+luosrt.py "$temppiHakemisto" "$projektiNimi" #kutsutaan python skriptiä, joka yhdistelee ocr-tulkatut tekstit srt-tiedostoksi. 
+filename=$(basename "$vtiedosto")
+#extension=${filename##*.}
+filename=${filename%.*}
+cp $temppiHakemisto/tekstit.srt "$filename.srt"
+echo "Tekstitystiedosto luotu: "$omaSijainti/$filename.srt
+#rm -rf $temppiHakemisto
+

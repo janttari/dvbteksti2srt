@@ -1,0 +1,19 @@
+#!/bin/bash
+
+#Varmistetaan että myöhemmin lisätyt riippuvuudet täyttyy
+onkoAsennettu=$(dpkg-query --show --showformat='${db:Status-Status}\n' tesseract-ocr-swe 2>/dev/null)
+#echo $onkoAsennettu
+if [ "$onkoAsennettu" != "installed" ]; then
+    sudo apt install -y tesseract-ocr-swe
+fi
+
+onkoAsennettu=$(dpkg-query --show --showformat='${db:Status-Status}\n' tesseract-ocr-nor 2>/dev/null)
+#echo $onkoAsennettu
+if [ "$onkoAsennettu" != "installed" ]; then
+    sudo apt install -y tesseract-ocr-nor
+fi
+
+chmod a+x dvbteksti2srt luosrt.py
+sudo mv dvbteksti2srt luosrt.py /usr/bin
+echo "Päivitys ok!"
+

@@ -1,0 +1,23 @@
+#!/bin/bash
+asennushakemisto="/tmp/dvbsub2srtasennus"
+sudo apt install -y tesseract-ocr-swe tesseract-ocr-fin python3-pip git build-essential git automake cmake libcurl4-gnutls-dev tesseract-ocr libtesseract-dev libleptonica-dev imagemagick
+omaSijainti=$(pwd)
+rm -rf $asennushakemisto
+mkdir -p $asennushakemisto
+cd $asennushakemisto
+touch $asennushakemisto/loki 2>/dev/null
+if [[ $? != "0" ]];then
+    echo "Tarkista $asennushakemisto käyttöoikeus. Seis."
+    exit
+fi
+
+# ***** ASENNETAAN CCEXTRACTOR *****
+git clone https://github.com/CCExtractor/ccextractor.git
+cd ccextractor/linux
+./autogen.sh && ./configure && make && sudo make install
+
+cd $omaSijainti
+chmod a+x dvbteksti2srt luosrt.py
+sudo mv dvbteksti2srt  luosrt.py /usr/bin
+echo "Valmis. Ohjelma toimii nyt komennolla:"
+echo "dvbteksti2srt <tiedosto>"
