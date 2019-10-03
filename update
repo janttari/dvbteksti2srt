@@ -14,6 +14,6 @@ if [ "$onkoAsennettu" != "installed" ]; then
 fi
 
 chmod a+x dvbteksti2srt luosrt.py
-sudo mv dvbteksti2srt luosrt.py /usr/bin
+sudo cp dvbteksti2srt luosrt.py /usr/bin
 echo "Päivitys ok!"
 

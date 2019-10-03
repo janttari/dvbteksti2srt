@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
-#2019-10-01 Jani Janttari <janttari@yandex.ru>
+#2019-10-03 Jani Janttari <janttari@yandex.ru>
 #
 #dvbsub2srt käyttää tätä skriptiä luodakseen srt tekstitystiedoston luomistaan yksittäisistä
 #tekstitiedostoista
 #
 import datetime, time, sys
 from pathlib import Path
+
+maxNayttoaika=10.0 # Tekstityksen maksimi näyttöaika sekunteina
+aikaOffset=0.0 # korjataan tekstityksen ajoitusta sekuntia
+
 
 temppiHakemisto=str(sys.argv[1])
 projektiNimi=str(sys.argv[2])
@@ -26,12 +30,27 @@ with open(temppiHakemisto+"/"+projektiNimi+".xml") as fp:
         if(len(rivi))>1:
             rivi=rivi.rstrip()
             if rivi.startswith("<spu"): #tällä rivillä tarvittavat tiedot
-                alku=etsiValista(rivi,'start="','" end')
+                alku=aikaOffset+float(etsiValista(rivi,'start="','" end'))
+                if alku<0: #jos aikaOffset vääntää pakkaselle
+                    alku=0
+                loppu=aikaOffset+float(etsiValista(rivi,'end="','" image'))
+                if loppu<0: #jos aikaOffset vääntää pakkaselle
+                    loppu=0
+                kesto=(loppu-alku)
+                if (kesto<0) or (kesto>maxNayttoaika): # jos näyttöaika liian lyhyt tai liian pitkä. liian lyhyt se voi olla kesken pätkäistyssä transport streamissa
+                    loppu=alku+maxNayttoaika
                 falku=datetime.timedelta(seconds=float(alku))
-                salku="0"+str(falku)[:-3].replace(".",",") #alkuaika tekstille
-                loppu=etsiValista(rivi,'end="','" image')
+                salku=str(falku)
+                if not "." in salku: #jos aika on tasasekunti ilman desimaalinollia, niin lisätään ne
+                    salku+=".000000"
+                salku=salku[:-3].replace(".",",")
+
                 floppu=datetime.timedelta(seconds=float(loppu))
-                sloppu="0"+str(floppu)[:-3].replace(".",",") #loppuaika tekstille
+                sloppu=str(floppu)
+                if not "." in sloppu: #jos aika on tasasekunti ilman desimaalinollia, niin lisätään ne
+                    sloppu+=".000000"
+                sloppu=sloppu[:-3].replace(".",",") #poistetaan lopusta kolme nollaa ja muutetaan piste pilkuksi
+
                 kuva=etsiValista(rivi,'image="','" xoffset')
                 numero=kuva[-8:-4]
                 steksti =  Path(temppiHakemisto+'/'+alihakemisto+"/"+numero+".txt").read_text() #luetaan kyseinen tekstitystiedosto

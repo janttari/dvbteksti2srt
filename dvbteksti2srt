@@ -1,5 +1,5 @@
 #!/bin/bash
-# 2019-10-02 Jani Janttari <janttari@yandex.ru>
+# 2019-10-03 Jani Janttari <janttari@yandex.ru>
 # Purkaa transport streamista ensin tekstityksen kuviksi, sitten käsittelee kuvatparemmin ocr tunnistettaviksi,
 # tunnistaa kuvista tekstin tekstitiedostoiksi ja lopulta kutsuu python-skriptiä joka luo srt-tiedoston
 #
@@ -46,11 +46,12 @@ fi
 
 lcall=$LC_ALL #otetaan talteen jos onkin määritelty niin voidaan palauttaa samaksi
 export LC_ALL=C #ccextractorin koodissa bugin, vaatii tän
+echo "Suoritetaan ccextractor, tässä menee hetki..."
 ccextractor -dvblang $kieli -out=spupng -o $temppiHakemisto/$projektiNimi.xml -noteletext "$vtiedosto" >>$temppiHakemisto/loki.txt
 
 # *******************************  KÄSITELLÄÄN KUVIA NIIN ETTÄ OCR ONNISTUU PAREMMIN *****************
 mkdir -p $temppiHakemisto/muokatutKuvat
-rm -rf $temppiHakemisto/muokatutKuvat/* #*/ koska muuten enscript luulee skriptin loppua kommentiksi :)
+rm -rf $temppiHakemisto/muokatutKuvat/*
 cd $temppiHakemisto/$projektiNimi.d/
 
 echo "Käsitellään:"
@@ -71,7 +72,13 @@ luosrt.py "$temppiHakemisto" "$projektiNimi" #kutsutaan python skriptiä, joka y
 filename=$(basename "$vtiedosto")
 #extension=${filename##*.}
 filename=${filename%.*}
+
 cp $temppiHakemisto/tekstit.srt "$filename.srt"
+if [[ $? != "0" ]];then
+    echo "Jotain meni pieleen. Seis."
+    exit
+fi
+
 echo "Tekstitystiedosto luotu: "$omaSijainti/$filename.srt
 #rm -rf $temppiHakemisto
 
