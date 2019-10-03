@@ -15,5 +15,9 @@ fi
 
 chmod a+x dvbteksti2srt luosrt.py
 sudo cp dvbteksti2srt luosrt.py /usr/bin
-echo "Päivitys ok!"
+if [[ $? != "0" ]];then
+    echo "Jotain meni pieleen. Seis."
+    exit
+fi
+echo "Päivitys ok"
 

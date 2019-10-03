@@ -18,6 +18,10 @@ cd ccextractor/linux
 
 cd $omaSijainti
 chmod a+x dvbteksti2srt luosrt.py
-sudo mv dvbteksti2srt  luosrt.py /usr/bin
+sudo cp dvbteksti2srt  luosrt.py /usr/bin
+if [[ $? != "0" ]];then
+    echo "Jotain meni pieleen. Seis."
+    exit
+fi
 echo "Valmis. Ohjelma toimii nyt komennolla:"
 echo "dvbteksti2srt <tiedosto>"
