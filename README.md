@@ -21,6 +21,6 @@ käyttöesimerkkejä:
     dvbteksti2srt -lang=nor video.ts
     dvbteksti2srt -lang=fin video.ts
     dvbteksti2srt video.ts #ilman -lang -valintaa kieli=fin
-
+    dvbteksti2srt -font=testi1 -lang=fin video.ts #muuttaa fontin käsittelyn asetuksia
 ##### TODO:
 - /tmp -hakemistoon nimeäminen niin että skriptistä voi käynnistää useampia sessioita.
