@@ -12,17 +12,23 @@ usage(){
     echo "$0 -lang=swe filename"
     exit 1
 }
-if [[ $1 == -lang* ]] ; then #jos ekana argumenttina on määritelty haluttu kieli
-    kieli=$(echo $1|cut -f 2 -d "=") # eka argumentti esim -lang=swe -->swe
-    vtiedosto=$2 #koska ekana argumenttina on kieli, tiedoston nimi on toisena
-else
-    kieli=fin #Asetetaan kieleksi oletuksena suomi
-    vtiedosto=$1 #argumenttina on pelkkä tiedoston nimi
-fi
 
-if [[ $kieli == fin || $kieli == swe || $kieli == nor ]];then  #jos dvb-tekstitys joku näistä
-    tessekieli="-l $kieli" #välitetään tesseractille kieli esim "-l swe"
-fi
+# parseroidaan arrgumentit jos niitä on
+kieli=fin #oletuskielenä on suomi, jos argumentteinä ei muuta määrätä
+luku=0 #argumenttien määrän laskuri
+for var in "$@" #Käydään läpi kaikki argumentit
+do
+    echo $luku: "$var"
+    if [[ $var == -lang* ]] ; then #jos ekana argumenttina on määritelty haluttu kieli
+        kieli=$(echo $var|cut -f 2 -d "=") # eka argumentti esim -lang=swe -->swe
+        echo kieli $kieli
+    fi
+    ((luku++))
+done
+vtiedosto=$var # viimeisenä (tai ainoana) argumenttinä on tiedoston nimi
+# ---------------------------------------------------------------------------
+tessekieli="-l $kieli" #välitetään tesseractille kieli esim "-l swe"
+#fi
 
 is_file_exits(){
     local f="$vtiedosto"
