@@ -3,6 +3,7 @@
 # Purkaa transport streamista ensin tekstityksen kuviksi, sitten käsittelee kuvatparemmin ocr tunnistettaviksi,
 # tunnistaa kuvista tekstin tekstitiedostoiksi ja lopulta kutsuu python-skriptiä joka luo srt-tiedoston
 #
+
 temppiHakemisto="/tmp/dvbteksti2srt"
 projektiNimi="dvbteksti2srt"
 omaSijainti=$PWD
@@ -15,16 +16,24 @@ usage(){
 
 # parseroidaan arrgumentit jos niitä on
 kieli=fin #oletuskielenä on suomi, jos argumentteinä ei muuta määrätä
+fontti="norm" #oletusfontti. Tällä määritellään convertin parametrejä myöhemmin
 luku=0 #argumenttien määrän laskuri
 for var in "$@" #Käydään läpi kaikki argumentit
 do
-    echo $luku: "$var"
-    if [[ $var == -lang* ]] ; then #jos ekana argumenttina on määritelty haluttu kieli
-        kieli=$(echo $var|cut -f 2 -d "=") # eka argumentti esim -lang=swe -->swe
-        echo kieli $kieli
+    if [[ $var == -lang* ]] ; then #jos  argumenttina on määritelty haluttu kieli
+        kieli=$(echo $var|cut -f 2 -d "=") #  argumentti esim -lang=swe -->swe
     fi
+    
+    if [[ $var == -font* ]] ; then #jos ekana argumenttina on määritelty haluttu fontti
+        fontti=$(echo $var|cut -f 2 -d "=") #  argumentti esim -font=oma
+    fi
+    
     ((luku++))
 done
+
+if [[ "$fontti" == "norm" ]] ; then convertParametrit="-set colorspace Gray -separate -average  -alpha off -negate"; fi
+if [[ "$fontti" == "testi1" ]] ; then convertParametrit="-negate -alpha remove -background black"; fi
+
 vtiedosto=$var # viimeisenä (tai ainoana) argumenttinä on tiedoston nimi
 # ---------------------------------------------------------------------------
 tessekieli="-l $kieli" #välitetään tesseractille kieli esim "-l swe"
@@ -65,7 +74,7 @@ for kuva in *.png
 do
     numero=$(echo $kuva|cut -c 4-7)
     echo -ne "$kuva\033[0K\r"
-    convert $kuva -set colorspace Gray -separate -average  -alpha off -negate $temppiHakemisto/muokatutKuvat/$numero.png >>$temppiHakemisto/loki.txt
+    convert $kuva $convertParametrit $temppiHakemisto/muokatutKuvat/$numero.png >>$temppiHakemisto/loki.txt
     tesseract $tessekieli  $temppiHakemisto/muokatutKuvat/$numero.png $temppiHakemisto/muokatutKuvat/$numero >>$temppiHakemisto/loki.txt 2>/$temppiHakemisto/tessaerr.txt #OCR yksittäisestä kuvasta yksittäiseksi txt-tiedostoksi
     cat $temppiHakemisto/muokatutKuvat/$numero.txt >> $temppiHakemisto/muokatutKuvat/_teksti.txt #debuggia
 done
