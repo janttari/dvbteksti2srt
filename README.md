@@ -13,8 +13,7 @@ asennus:
 
 päivitys (projektihakemistossa):
 
-    git pull
-    sudo ./update
+    git pull && sudo ./update
 
 käyttöesimerkkejä:
 
