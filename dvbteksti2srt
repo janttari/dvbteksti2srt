@@ -1,5 +1,5 @@
 #!/bin/bash
-# 2019-10-03 Jani Janttari <janttari@yandex.ru>
+# 2019-10-04 Jani Janttari <janttari@yandex.ru>
 # Purkaa transport streamista ensin tekstityksen kuviksi, sitten käsittelee kuvatparemmin ocr tunnistettaviksi,
 # tunnistaa kuvista tekstin tekstitiedostoiksi ja lopulta kutsuu python-skriptiä joka luo srt-tiedoston
 #

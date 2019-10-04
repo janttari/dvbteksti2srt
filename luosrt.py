@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-#2019-10-03 Jani Janttari <janttari@yandex.ru>
+#2019-10-04 Jani Janttari <janttari@yandex.ru>
 #
 #dvbsub2srt käyttää tätä skriptiä luodakseen srt tekstitystiedoston luomistaan yksittäisistä
 #tekstitiedostoista
@@ -40,13 +40,13 @@ with open(temppiHakemisto+"/"+projektiNimi+".xml") as fp:
                 if (kesto<0) or (kesto>maxNayttoaika): # jos näyttöaika liian lyhyt tai liian pitkä. liian lyhyt se voi olla kesken pätkäistyssä transport streamissa
                     loppu=alku+maxNayttoaika
                 falku=datetime.timedelta(seconds=float(alku))
-                salku=str(falku)
+                salku="0"+str(falku)
                 if not "." in salku: #jos aika on tasasekunti ilman desimaalinollia, niin lisätään ne
                     salku+=".000000"
                 salku=salku[:-3].replace(".",",")
 
                 floppu=datetime.timedelta(seconds=float(loppu))
-                sloppu=str(floppu)
+                sloppu="0"+str(floppu)
                 if not "." in sloppu: #jos aika on tasasekunti ilman desimaalinollia, niin lisätään ne
                     sloppu+=".000000"
                 sloppu=sloppu[:-3].replace(".",",") #poistetaan lopusta kolme nollaa ja muutetaan piste pilkuksi
