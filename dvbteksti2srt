@@ -3,7 +3,6 @@
 # Purkaa transport streamista ensin tekstityksen kuviksi, sitten käsittelee kuvatparemmin ocr tunnistettaviksi,
 # tunnistaa kuvista tekstin tekstitiedostoiksi ja lopulta kutsuu python-skriptiä joka luo srt-tiedoston
 #
-
 temppiHakemisto="/tmp/dvbteksti2srt"
 projektiNimi="dvbteksti2srt"
 omaSijainti=$PWD
@@ -50,8 +49,17 @@ then
  echo "Tiedostoa ei ole, seis!"
  exit
 fi
-rm -rf $temppiHakemisto
-mkdir -p $temppiHakemisto
+# ********************************* LUODAAN TEMPPI HAKEMISTO ********************************************************
+if ! [ -d "$temppiHakemisto" ]; then #jos dvbteksti2srt tmp päähakemistoa ei ole vielä
+    mkdir -p $temppiHakemisto
+fi
+olemAlihak=$(ls $temppiHakemisto|tail -n 1) #katsotaan mikä on suurin olemassaoleva alihakemisto
+luoAlihak=$(expr $olemAlihak + 1) #alihakemisto lukuarvona olemassaoleva suurin + 1
+tmluoAlihak="0000"$luoAlihak
+sluoAlihak=${tmluoAlihak: -4}
+temppiHakemisto=$temppiHakemisto/$sluoAlihak #on nyt muodossa /tmp/dvbteksti2srt/0001 (-9999)
+mkdir $temppiHakemisto
+#***********************************************************************************************************************
 touch $temppiHakemisto/loki.txt 2>/dev/null
 if [[ $? != "0" ]];then
     echo "Tarkista $temppiHakemisto käyttöoikeus. Seis."
