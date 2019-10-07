@@ -1,5 +1,5 @@
 #!/bin/bash
-# 2019-10-04 Jani Janttari <janttari@yandex.ru>
+# 2019-10-07 Jani Janttari <janttari@yandex.ru>
 # Purkaa transport streamista ensin tekstityksen kuviksi, sitten käsittelee kuvatparemmin ocr tunnistettaviksi,
 # tunnistaa kuvista tekstin tekstitiedostoiksi ja lopulta kutsuu python-skriptiä joka luo srt-tiedoston
 #
@@ -32,6 +32,7 @@ done
 
 if [[ "$fontti" == "norm" ]] ; then convertParametrit="-set colorspace Gray -separate -average  -alpha off -negate"; fi
 if [[ "$fontti" == "testi1" ]] ; then convertParametrit="-negate -alpha remove -background black"; fi
+if [[ "$fontti" == "testi2" ]] ; then convertParametrit="-resize 200% -negate -alpha remove -background black"; fi
 
 vtiedosto=$var # viimeisenä (tai ainoana) argumenttinä on tiedoston nimi
 # ---------------------------------------------------------------------------
