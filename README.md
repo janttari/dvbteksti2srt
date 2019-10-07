@@ -24,4 +24,4 @@ käyttöesimerkkejä:
     dvbteksti2srt -font=testi1 -lang=fin video.ts #muuttaa fontin käsittelyn asetuksia
     dvbteksti2srt -font=testi2 -lang=fin video.ts #muuttaa fontin käsittelyn asetuksia
 ##### TODO:
-- /tmp -hakemistoon nimeäminen niin että skriptistä voi käynnistää useampia sessioita.
+
