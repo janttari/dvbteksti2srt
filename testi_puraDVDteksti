@@ -37,7 +37,7 @@ done
 #kierretään ongelma trimmaamalla kuvasta tyhjät pois. ja lisäämällä mustat palkit sivuille ja hieman ylös
 #ja alaskin. ne muuttuu negatessa valkoiseksi ja tunnistus onnistuu
 #
-convertParametrit="-trim -bordercolor black -border 50x5 -resize 150% -negate -alpha remove -background black"
+convertParametrit="-trim -bordercolor black -border 50x5 -resize 200% -negate -alpha remove -background black"
 tessekieli="-l fin"
 
 echo käsitellään kuvaa:
@@ -64,6 +64,7 @@ for dir in */ ; do #käydään alihakemistot läpi
     for teksti in *.txt ; do
         #echo dir: $dir teksti: $teksti pwd: $(pwd)
         cat $teksti |sed 's/\x0C//g' |sed 's/\x0A//g' >>$palaaHakemistoon/tekstitykset.txt
+        echo "" >>$palaaHakemistoon/tekstitykset.txt
     done
     cd ../..
 done
