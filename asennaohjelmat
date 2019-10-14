@@ -1,6 +1,6 @@
 #!/bin/bash
 asennushakemisto="/tmp/dvbsub2srtasennus"
-sudo apt install -y tesseract-ocr-swe tesseract-ocr-fin python3-pip git build-essential git automake cmake libcurl4-gnutls-dev tesseract-ocr libtesseract-dev libleptonica-dev imagemagick
+sudo apt install -y tesseract-ocr-swe tesseract-ocr-fin python3-pip git build-essential git automake cmake libcurl4-gnutls-dev tesseract-ocr libtesseract-dev libleptonica-dev imagemagick ogmrip lsdvd mencoder mediainfo ffmpeg
 omaSijainti=$(pwd)
 rm -rf $asennushakemisto
 mkdir -p $asennushakemisto

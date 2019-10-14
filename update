@@ -1,17 +1,15 @@
 #!/bin/bash
 
 #Varmistetaan että myöhemmin lisätyt riippuvuudet täyttyy
-onkoAsennettu=$(dpkg-query --show --showformat='${db:Status-Status}\n' tesseract-ocr-swe 2>/dev/null)
-#echo $onkoAsennettu
-if [ "$onkoAsennettu" != "installed" ]; then
-    sudo apt install -y tesseract-ocr-swe
-fi
-
-onkoAsennettu=$(dpkg-query --show --showformat='${db:Status-Status}\n' tesseract-ocr-nor 2>/dev/null)
-#echo $onkoAsennettu
-if [ "$onkoAsennettu" != "installed" ]; then
-    sudo apt install -y tesseract-ocr-nor
-fi
+array=( tesseract-ocr-swe tesseract-ocr-fin python3-pip git build-essential git automake cmake libcurl4-gnutls-dev tesseract-ocr libtesseract-dev libleptonica-dev imagemagick ogmrip lsdvd mencoder mediainfo ffmpeg )
+for i in "${array[@]}"
+do
+    onkoAsennettu=$(dpkg-query --show --showformat='${db:Status-Status}\n' $i 2>/dev/null)
+    if [ "$onkoAsennettu" != "installed" ]; then
+        echo "Installing package $i"
+        sudo apt install -y $i
+    fi
+done
 
 chmod a+x dvbteksti2srt luosrt.py
 sudo cp dvbteksti2srt luosrt.py /usr/bin
@@ -21,3 +19,7 @@ if [[ $? != "0" ]];then
 fi
 echo "Päivitys ok"
 
+
+
+
+#ogmrip lsdvd mencoder mediainfo ffmpeg
