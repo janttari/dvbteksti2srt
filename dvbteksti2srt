@@ -1,108 +1,169 @@
 #!/bin/bash
-# 2019-10-07 Jani Janttari <janttari@yandex.ru>
-# Purkaa transport streamista ensin tekstityksen kuviksi, sitten käsittelee kuvatparemmin ocr tunnistettaviksi,
-# tunnistaa kuvista tekstin tekstitiedostoiksi ja lopulta kutsuu python-skriptiä joka luo srt-tiedoston
+#2019-10-14 Jani Janttari <janttari@yandex.ru>
+#DVD dvbteksti2srt -font=dvd /media/loop/video_ts
+#DVB dvbteksti2srt /path/video.ts
 #
-temppiHakemisto="/tmp/dvbteksti2srt"
-projektiNimi="dvbteksti2srt"
-omaSijainti=$PWD
-usage(){
-    echo "Käyttö:"
+# Extracts subtitle from transport stream or DVD and converts it to SRT-file
+#
+
+homeLocation=$(pwd)
+tempDir="/tmp/dvbteksti2srt"
+#projectName="dvbteksti2srt"
+
+######################################################################## FUNCTIONS ##########
+usage(){ #-------------------------------------------------------------- Usage print
+    echo "Usage:"
     echo "$0 filename"
     echo "$0 -lang=swe filename"
     exit 1
 }
 
-# parseroidaan arrgumentit jos niitä on
-kieli=fin #oletuskielenä on suomi, jos argumentteinä ei muuta määrätä
-fontti="norm" #oletusfontti. Tällä määritellään convertin parametrejä myöhemmin
-luku=0 #argumenttien määrän laskuri
-for var in "$@" #Käydään läpi kaikki argumentit
-do
-    if [[ $var == -lang* ]] ; then #jos  argumenttina on määritelty haluttu kieli
-        kieli=$(echo $var|cut -f 2 -d "=") #  argumentti esim -lang=swe -->swe
-    fi
-    
-    if [[ $var == -font* ]] ; then #jos ekana argumenttina on määritelty haluttu fontti
-        fontti=$(echo $var|cut -f 2 -d "=") #  argumentti esim -font=oma
-    fi
-    
-    ((luku++))
-done
-
-if [[ "$fontti" == "norm" ]] ; then convertParametrit="-set colorspace Gray -separate -average  -alpha off -negate"; fi
-if [[ "$fontti" == "testi1" ]] ; then convertParametrit="-negate -alpha remove -background black"; fi
-if [[ "$fontti" == "testi2" ]] ; then convertParametrit="-resize 200% -negate -alpha remove -background black"; fi
-
-vtiedosto=$var # viimeisenä (tai ainoana) argumenttinä on tiedoston nimi
-# ---------------------------------------------------------------------------
-tessekieli="-l $kieli" #välitetään tesseractille kieli esim "-l swe"
-#fi
-
-is_file_exits(){
-    local f="$vtiedosto"
-    [[ -f "$f" ]] && return 0 || return 1
+debug(){ #-------------------------------------------------------------- Print debug messages
+    echo "$1"
 }
-[[ $# -eq 0 ]] && usage
 
-if !( is_file_exits "$vtiedosto" )
-then
- echo "Tiedostoa ei ole, seis!"
- exit
-fi
-# ********************************* LUODAAN TEMPPI HAKEMISTO ********************************************************
-if ! [ -d "$temppiHakemisto" ]; then #jos dvbteksti2srt tmp päähakemistoa ei ole vielä
-    mkdir -p $temppiHakemisto
-fi
-olemAlihak=$(ls $temppiHakemisto|tail -n 1) #katsotaan mikä on suurin olemassaoleva alihakemisto
-luoAlihak=$(expr $olemAlihak + 1) #alihakemisto lukuarvona olemassaoleva suurin + 1
-tmluoAlihak="0000"$luoAlihak
-sluoAlihak=${tmluoAlihak: -4}
-temppiHakemisto=$temppiHakemisto/$sluoAlihak #on nyt muodossa /tmp/dvbteksti2srt/0001 (-9999)
-mkdir $temppiHakemisto
-#***********************************************************************************************************************
-touch $temppiHakemisto/loki.txt 2>/dev/null
-if [[ $? != "0" ]];then
-    echo "Tarkista $temppiHakemisto käyttöoikeus. Seis."
-    exit
-fi
+pngToText(){ #---------------------------------------------------------- .png --> .txt
+    echo "Convert and Tesseract-ocr:"
+    for pic in *.png
+    do
+        number=$(echo $pic|tr -dc '0-9')
+        echo -ne "$pic\033[0K\r"
+        convert $pic $convertParameters $pic >/dev/null 2>/dev/null #convert image using ImageMagick
+        tesseract -l $tesseLang  $pic $number >/dev/null 2>/dev/null # zzz.png --> zzz.png.txt Tesseract-OCR
+    done
+    echo ""
+    cd  $tempDir
+}
 
 
-lcall=$LC_ALL #otetaan talteen jos onkin määritelty niin voidaan palauttaa samaksi
-export LC_ALL=C #ccextractorin koodissa bugin, vaatii tän
-echo "Suoritetaan ccextractor, tässä menee hetki..."
-ccextractor -dvblang $kieli -out=spupng -o $temppiHakemisto/$projektiNimi.xml -noteletext "$vtiedosto" >>$temppiHakemisto/loki.txt
 
-# *******************************  KÄSITELLÄÄN KUVIA NIIN ETTÄ OCR ONNISTUU PAREMMIN *****************
-mkdir -p $temppiHakemisto/muokatutKuvat
-rm -rf $temppiHakemisto/muokatutKuvat/*
-cd $temppiHakemisto/$projektiNimi.d/
 
-echo "Käsitellään:"
-for kuva in *.png
+
+
+######################################################################## INITIALIZE #######################################
+[[ $# -eq 0 ]] && usage # If no arguments given, print usage message
+
+language=fin # Default language finnish
+
+font="dvd" #Default font
+
+for var in "$@" #Iterate all command line arduments
 do
-    numero=$(echo $kuva|cut -c 4-7)
-    echo -ne "$kuva\033[0K\r"
-    convert $kuva $convertParametrit $temppiHakemisto/muokatutKuvat/$numero.png >>$temppiHakemisto/loki.txt
-    tesseract $tessekieli  $temppiHakemisto/muokatutKuvat/$numero.png $temppiHakemisto/muokatutKuvat/$numero >>$temppiHakemisto/loki.txt 2>/$temppiHakemisto/tessaerr.txt #OCR yksittäisestä kuvasta yksittäiseksi txt-tiedostoksi
-    cat $temppiHakemisto/muokatutKuvat/$numero.txt >> $temppiHakemisto/muokatutKuvat/_teksti.txt #debuggia
+    if [[ $var == -lang* ]] ; then #If language in argument
+        language=$(echo $var|cut -f 2 -d "=") #  Example argument -lang=swe -->swe
+    fi
+    
+    if [[ $var == -font* ]] ; then #Font OCR parameter
+        font=$(echo $var|cut -f 2 -d "=") #  Example  -font=oma
+    fi
+    
+    if [[ $var == -nodelete ]] ; then nodelete=1;fi #don't clear temp files
+    
 done
-echo ""
+videoSource=$var # Last (or only) argument is source file name
+videoSource=${videoSource%/} #Remove last "/" if exist
+baseVideoSource=$(basename -- "$videoSource")
+extension="${baseVideoSource##*.}"
+baseVideoSource="${baseVideoSource%.*}" # Source file name without  path and extension
 
-cd $omaSijainti #palataan sinne mistä skripti käynnistettiin
-export LC_ALL=$lcall #palautetaan tämä siksi mikä se olikin eli luultavimmin tyhjä TÄRKEÄ PALAUTTAA ENNEN PYTHONIA!
-echo "Luodaan SRT-tiedosto"
-luosrt.py "$temppiHakemisto" "$projektiNimi" #kutsutaan python skriptiä, joka yhdistelee ocr-tulkatut tekstit srt-tiedostoksi. 
-filename=$(basename "$vtiedosto")
-#extension=${filename##*.}
-filename=${filename%.*}
+if [[ "$font" == "norm" ]] ; then convertParameters="-set colorspace Gray -separate -average  -alpha off -negate"; fi
+if [[ "$font" == "testi1" ]] ; then convertParameters="-negate -alpha remove -background black"; fi
+if [[ "$font" == "testi2" ]] ; then convertParameters="-resize 200% -negate -alpha remove -background black"; fi
+if [[ "$font" == "dvd" ]] ; then convertParameters="-trim -bordercolor black -border 50x5 -resize 200% -negate -alpha remove -background black"; fi
 
-cp $temppiHakemisto/tekstit.srt "$filename.srt"
-if [[ $? != "0" ]];then
-    echo "Jotain meni pieleen. Seis."
-    exit
+tesseLang="$language" #Tesseract OCR language
+######################################################################## MAIN ###############################################
+if ! [ -d "$tempDir" ]; then #------------------------------------------ Create temp directory ------------------------------
+    mkdir -p $tempDir
+fi
+lastSubdir=$(ls $tempDir|tail -n 1) #katsotaan mikä on suurin olemassaoleva alihakemisto
+newSubdir=$(expr $lastSubdir + 1) #alihakemisto lukuarvona olemassaoleva suurin + 1
+tmnewSubdir="0000"$newSubdir
+snewSubdir=${tmnewSubdir: -4}
+tempDir=$tempDir/$snewSubdir #on nyt muodossa /tmp/dvbteksti2srt/0001 (-9999)
+mkdir $tempDir #-----------------------------------------------------------------------------------------------------------
+
+if [[ $language == "fin" ]] ; then shortLang="fi";fi #fin --> fi
+if [[ $language == "swe" ]] ; then shortLang="sv";fi #swe --> sv
+if [[ $language == "nor" ]] ; then shortLang="no";fi #nor --> no
+
+if [[ ${videoSource,,} == *"/video_ts"* ]]; then # ------------------------- *** Video source is DVD *** --------------------------------------
+    [ ! -d $videoSource ] && echo "Directory not exist!" && exit #If given /video_ts dir does not exist then exit 
+    subTrack=$(lsdvd -s  "$videoSource" 2>/dev/null|grep 'Language: '$shortLang''|cut -d ":" -f 2|cut -c 2-3) #Detect subtitle track
+    if [[ "${#subTrack}" != "2" ]]; then echo "Cant' detect subtitle track"; exit; fi #Detecting subtitle language fails
+    (( subTrack -- )) #index from 1 --> index from 0
+    videoTitle=$(lsdvd "$videoSource" 2>/dev/null|grep Long|cut -d ":" -f 2|cut -c 2-) #Get Longest title
+    
+    vts=$(ls "$videoSource" |grep _$videoTitle|cut -d "_" -f 1|head -n 1) #Can be "vts" or "VTS"
+    vob=$(ls "$videoSource"/*.[vV][oO][bB]|cut -d "." -f 2|head -n 1)  #Can be "vts" or "VTS"
+    firstVob=$(ls "$videoSource"/"$vts"_"$videoTitle"_*."$vob"|head -n 1)
+    firstVobSize=$(stat --printf="%s" "$firstVob") #Get first .vob size in bytes
+    if (( firstVobSize < 524288000 )); then #If first .vob smaller than 500 MB (probably :D) it's menu
+        vobFiles=$(ls -1 "$videoSource"/"$vts"_"$videoTitle"_*."$vob"|sed 1,1d) #list ##.vobs from second to end (menu) vts_##_*.vob
+    else
+        vobFiles=$(ls -1 "$videoSource"/"$vts"_"$videoTitle"_*."$vob")  #list ##.vobs from first to end (menu) vts_##_*.vob
+    fi
+    echo "Joining .vob-files..."
+    cat $vobFiles >$tempDir/tmp.vob #Create one big .vob-file
+    mkdir -p  $tempDir/png
+    echo "Mencoder vobsub..."
+    mencoder $tempDir/tmp.vob -nosound -ovc frameno -o /dev/null -vobsuboutindex 0 -sid $subTrack -vobsubout $tempDir/png/subs 2>/dev/null
+    cd  $tempDir/png
+    echo "Sub2png exctracting png-images..."
+    subp2png -n subs #-n, --normalize             Normalize the palette
+    pngToText #call function to convert .png to .txt
+    luosrt.py "$tempDir" #Call Python script to parse .srt
+    cd $homeLocation
+    cp $tempDir/tekstit.srt "$baseVideoSource.srt"
+    if [[ $? != "0" ]];then echo "Something went wrong!"; exit; fi
+    echo "Created file: $baseVideoSource.srt"
+    
+else # ----------------------------------------------------------------- *** Video source is DVB *** --------------------------------------
+    [ ! -f "$videoSource" ] && echo "File not exist!" && exit #If given source file dir does not exist then exit
+    lcall=$LC_ALL 
+    
+    testSubtitles=$(ffprobe "$videoSource" 2>&1 |grep Subtitle|grep "$lang") #Check is DVB and teletext subtitles available
+    if [[ $testSubtitles == *"dvb_subtitle"* ]];then dvbSubAvailable=1;fi #There is DVB subtitle available 
+    if [[ $testSubtitles == *"dvb_teletext"* ]];then dvbTeletextAvailable=1;fi #There is teletext subtitle available
+    if !([[ $dvbSubAvailable ]]||[[ $dvbTeletextAvailable ]]); then echo "No subtitles found";exit;fi
+
+    if [[ $dvbSubAvailable ]];then #Using DVB-subtitles
+        debug "Using DVB subtitles"
+        echo "Ccextracor..."
+        export LC_ALL=C #ccextractor dont't work without
+        ccextractor -dvblang $language -out=spupng -o $tempDir/subs.xml -noteletext "$videoSource"  >/dev/null 2>/dev/null
+        export LC_ALL=$lcall #restore LC_ALL
+        cd $tempDir/subs.d
+        pngToText #call function to convert .png to .txt
+        luosrt.py "$tempDir" #Call Python script to parse .srt
+        cd $homeLocation
+        cp $tempDir/tekstit.srt "$baseVideoSource.srt"
+        if [[ $? != "0" ]];then echo "Something went wrong!"; exit; fi
+        echo "Created file: $baseVideoSource.srt"
+        
+    else #Using teletext-subtitles
+        debug "Using teletext subtitles"
+        echo "Ccextracor..."
+        tpage=$(mediainfo --Output=XML "$videoSource"|grep -a3 "<Language>$shortLang" |head -n 1|cut -d '-' -f 2|cut -d '<' -f 1) # teletext page number
+        ccextractor -tpage $tpage "$videoSource" -o "$baseVideoSource".srt >/dev/null 2>/dev/null
+        #if [[ $? != "0" ]];then echo "Something went wrong!"; exit; fi
+        echo "Created file: $baseVideoSource.srt" 
+    fi
+ 
+
+
+fi #-------------------------------------------------------------------- /video source type
+    
+if [ -z ${nodelete+x} ]; then
+    echo "Deleting temp files..."
+    rm -rf $tempDir
 fi
 
-echo "Tekstitystiedosto luotu: "$omaSijainti/$filename.srt
-#rm -rf $temppiHakemisto
+exit
+
+
+
+
+
+
 

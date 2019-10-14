@@ -23,5 +23,11 @@ käyttöesimerkkejä:
     dvbteksti2srt video.ts #ilman -lang -valintaa kieli=fin
     dvbteksti2srt -font=testi1 -lang=fin video.ts #muuttaa fontin käsittelyn asetuksia
     dvbteksti2srt -font=testi2 -lang=fin video.ts #muuttaa fontin käsittelyn asetuksia
+    dvbteksti2srt -nodelete /media/loop/VIDEO_TS/ #DVD-levyn lukeminen tekstiksi. -nodelete jättää /tmp/dvbteksti2srt hakemistoon tiedostot
+    
+Parametrit:
+    -lang {fin, swe, nor}
+    -font {norm, testi1, testi2, dvd} #OCR-tunnistuksen parametrejä
+    -nodelete #jättää temppihakemistoon tiedostot.
 ##### TODO:
 
