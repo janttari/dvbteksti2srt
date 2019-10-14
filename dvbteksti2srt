@@ -69,7 +69,7 @@ baseVideoSource="${baseVideoSource%.*}" # Source file name without  path and ext
 if [[ "$font" == "norm" ]] ; then convertParameters="-set colorspace Gray -separate -average  -alpha off -negate"; fi
 if [[ "$font" == "testi1" ]] ; then convertParameters="-negate -alpha remove -background black"; fi
 if [[ "$font" == "testi2" ]] ; then convertParameters="-resize 200% -negate -alpha remove -background black"; fi
-if [[ "$font" == "dvd" ]] ; then convertParameters="-trim -bordercolor black -border 50x5 -resize 200% -negate -alpha remove -background black"; fi
+if [[ "$font" == "dvd" ]] ; then convertParameters="-trim -bordercolor black -border 50x5 -resize 300% -negate -alpha remove -background black"; fi
 
 tesseLang="$language" #Tesseract OCR language
 ######################################################################## MAIN ###############################################
